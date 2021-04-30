@@ -60,7 +60,7 @@ def detect_outlier(data):
         z_score = (y - mean_1) / std_1 
         if np.abs(z_score) > threshold:
             outliers.append(y)
-    return outliers
+    return outliers # Rewrite so as to register indices rather than values? Risk of overlapping values, removing wrong values.
 
 
 ############################################################
@@ -92,15 +92,10 @@ def remove_outliers(data, partition):
     
 ############################################################
 ############################################################
-def standard_pivot(value, data): #, agg_method
-    
-    # Group by desired partition 
-    #df_piv = data.groupby(['weekday', 'hour']).aggregate({f'{value}':f'{agg_method}'}).reset_index()
-    
-    # Transpose data
+def standard_pivot(value, data): 
     
     ## ADD A CATCH TRY for having an unfiltered grouping
-    df_piv = data.pivot(index="hour", columns="weekday", values=f"{value}") #df_piv
+    df_piv = data.pivot(index="hour", columns="weekday", values=f"{value}")
     
     n_weekdays = len(df_piv.columns)
 
@@ -114,40 +109,24 @@ def standard_pivot(value, data): #, agg_method
 
 ############################################################
 ############################################################
-def comparison_pivot(value, data, comp_data): #, agg_method
+def comparison_pivot(value, data, comp_data): 
     
-    # Calculate the total values for each time period
-    #value_agg = data.aggregate({f'{value}': f'{agg_method}'})[0]
-    #value_agg_comp = comp_data.aggregate({f'{value}': f'{agg_method}'})[0]
-    
-    # Based on those values, calculate the inflation (or deflation) from then to now 
-    #if value_agg_comp != 0:
-    #    inflation = value_agg / value_agg_comp
-    #    percentage = round((inflation - 1) * 100,0)
-    #else:
-    #    inflation = 1
-    #    percentage = 'N/A'
-    
-    # Adjust the comparison data based on present-day inflation
-    #real_present_data = standard_pivot(data=data, agg_method=agg_method, value=value)
-    #real_comparison_data = inflation * standard_pivot(data=comp_data, agg_method=agg_method, value=value)
-    nominal_present_data = standard_pivot(data=data, value=value) # , agg_method=agg_method
-    nominal_comparison_data = standard_pivot(data=comp_data, value=value) #, agg_method=agg_method
+    nominal_present_data = standard_pivot(data=data, value=value) 
+    nominal_comparison_data = standard_pivot(data=comp_data, value=value) 
     
     comp_piv = ( (nominal_present_data - nominal_comparison_data) / nominal_comparison_data )
-    #print(f"{value} inflation: {percentage}%. (Graph is inflation-adjusted.)")
     return(comp_piv)
 
 
 ############################################################
 ############################################################
-def pivot_method(value, data, comp_data=pd.DataFrame()): #, agg_method
+def pivot_method(value, data, comp_data=pd.DataFrame()):
     
     if comp_data.empty == True:
-        standard_piv = standard_pivot(value=value, data=data) #, agg_method=agg_method
+        standard_piv = standard_pivot(value=value, data=data) 
         return(standard_piv)
     else:
-        comparison_piv = comparison_pivot(value=value, data=data, comp_data=comp_data) #, agg_method=agg_method
+        comparison_piv = comparison_pivot(value=value, data=data, comp_data=comp_data) 
     return(comparison_piv)
 
 
@@ -173,14 +152,13 @@ def filter_params(params, data):
 
 ############################################################
 ############################################################
-def heatmap(params, data, metrics, dates, comp_data=pd.DataFrame()): #agg_methods
+def heatmap(params, data, metrics, dates, comp_data=pd.DataFrame()):
     
     metrics_keys = list(metrics.keys())
     metrics_names = list(metrics.values())
-    #agg_methods = list(agg_methods.values())
     
     # Draw a heatmap with the numeric values in each cell
-    f, ax = plt.subplots(1,len(metrics), figsize=(20, 10), squeeze=False) # Squeeze so we can use indexing even for 1D subplots.
+    f, ax = plt.subplots(1,len(metrics), figsize=(20, 10), squeeze=False) # Don't squeeze so we can use indexing even for 1D subplots.
     
     # Filtered the original dataset based on selected filtering parameters
     filtered_data = filter_params(params=params, data=data)
@@ -197,16 +175,19 @@ def heatmap(params, data, metrics, dates, comp_data=pd.DataFrame()): #agg_method
     for pos in np.arange(len(metrics)): 
        
         try:
-            sns.heatmap(pivot_method(data=filtered_data, 
-                                     value=metrics_keys[pos], #  agg_method=agg_methods[pos], 
-                                     comp_data=filtered_comp_data), 
-                    annot=True, 
-                    linewidths=.5, 
-                    fmt=f"{NBR_FORMAT}", # Float with no decimals.
-                    cbar=False,
-                    cmap="RdYlGn",
-                    center=CENTER,
-                    ax=ax[0, pos]);
+            sns.heatmap(pivot_method
+                        (
+                            data=filtered_data, 
+                            value=metrics_keys[pos], 
+                            comp_data=filtered_comp_data
+                        ), 
+                        annot=True, 
+                        linewidths=.5, 
+                        fmt=f"{NBR_FORMAT}", # Float with no decimals.
+                        cbar=False,
+                        cmap="RdYlGn",
+                        center=CENTER,
+                        ax=ax[0, pos]);
         except ValueError: #raised if heatmap is empty is empty.
             pass
         
