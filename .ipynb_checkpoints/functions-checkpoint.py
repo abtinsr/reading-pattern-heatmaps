@@ -159,6 +159,7 @@ def heatmap(params, data, metrics, dates, comp_data=pd.DataFrame()):
     
     # Draw a heatmap with the numeric values in each cell
     f, ax = plt.subplots(1,len(metrics), figsize=(20, 10), squeeze=False) # Don't squeeze so we can use indexing even for 1D subplots.
+    sns.set_context("notebook")
     
     # Filtered the original dataset based on selected filtering parameters
     filtered_data = filter_params(params=params, data=data)
